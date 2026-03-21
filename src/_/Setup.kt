@@ -1,10 +1,10 @@
-package _
+package `_`
 
 import java.io.File
 
 fun main() {
     print("contestName -> ")
-    val contestName = readln().trim()
+    val contestName = readLine()!!.trim()
     require(contestName.isNotEmpty()) { "コンテスト名が空です" }
 
     val contestType = when {
