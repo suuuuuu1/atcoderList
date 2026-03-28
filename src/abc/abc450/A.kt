@@ -1,8 +1,12 @@
 package abc.abc450
 
 fun main() {
-    val a = 1
-    println(a)
+    val a = readln().toInt()
+    for(i in 0 until a-1){
+        print(a-i)
+        print(",")
+    }
+    println(1)
 }
 
 @Suppress("unused")

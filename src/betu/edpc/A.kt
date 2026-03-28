@@ -41,15 +41,15 @@ fun main() {
     val n = readln().trim().toInt()
     val h = readln().trim().split(" ").map { it.toInt() }
 
-    val dp = IntArray(n)
+    val INF = 1 shl 30
+    val dp = IntArray(n) { INF }
     dp[0] = 0
-    if (n >= 2) dp[1] = abs(h[1] - h[0])
 
-    for (i in 2 until n) {
-        val oneStep = dp[i - 1] + abs(h[i] - h[i - 1])
-        val twoStep = dp[i - 2] + abs(h[i] - h[i - 2])
-        chmin(dp, i, oneStep)
-        chmin(dp, i, twoStep)
+    for (i in 0 until n) {
+        if (i + 1 < n) chmin(dp, i + 1, dp[i] + abs(h[i] - h[i + 1]))
+        if (i + 2 < n) chmin(dp, i + 2, dp[i] + abs(h[i] - h[i + 2]))
     }
+
     println(dp[n - 1])
 }
+

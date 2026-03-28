@@ -38,16 +38,14 @@ private fun chmax(a: LongArray, idx: Int, v: Long): Boolean {
 }
 
 fun main() {
-    val (n,k) = readln().split(" ").map { it.toInt() }
+    val (n, k) = readln().split(" ").map { it.toInt() }
     val h = readln().split(" ").map { it.toInt() }
     val dp = LongArray(n) { Long.MAX_VALUE }
     dp[0] = 0L
-    for (i in 1 until n) {
-        for (j in 1 .. k) {
-            val prev = i - j
-            if(prev < 0) break
-            chmin(dp,i,dp[i-j] + abs(h[i] - h[i-j]).toLong())
+    for (i in 0 until n) {
+        for (j in 1..k) {
+            if (i + j < n) chmin(dp, i + j, dp[i] + abs(h[i] - h[i + j]).toLong())
         }
     }
-    println(dp [ n - 1 ])
+    println(dp[n - 1])
 }
