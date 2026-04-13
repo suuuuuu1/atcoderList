@@ -1,3 +1,5 @@
+@file:JvmName("Abc149D")
+
 fun main() {
     val (n, k) = readln().trim().split(" ").map { it.toInt() }
     val (r, s, p) = readln().trim().split(" ").map { it.toInt() }

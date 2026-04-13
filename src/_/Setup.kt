@@ -23,12 +23,11 @@ fun main() {
     } else {
         EXTENDED_PROBLEMS.split(' ')
     }
-    val template = buildTemplate(contestType, contestName)
-
     val dir = File("src/$contestType/$contestName").also { it.mkdirs() }
     problems.forEach { problem ->
         val file = File(dir, "$problem.kt")
         if (file.exists()) return@forEach
+        val template = buildTemplate(contestType, contestName)
         file.writeText(template)
         println("${file.name} を生成しました")
     }
@@ -38,30 +37,49 @@ fun main() {
 private const val DEFAULT_PROBLEMS = "A B C D E F G"
 private const val EXTENDED_PROBLEMS = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
 
-private fun buildTemplate(contestType: String, contestName: String): String = """
-    package $contestType.$contestName
+private fun buildTemplate(contestType: String, contestName: String): String {
+    val packageName = "$contestType.$contestName"
+    return """
+        package $packageName
 
-    fun main() {
-        
-    }
-    
-    @Suppress("unused")
-    private fun chmin(a: LongArray, idx: Int, v: Long): Boolean {
-        if (v < a[idx]) {
-            a[idx] = v
-            return true
+        fun main() {
+
         }
-        return false
-    }
 
-    @Suppress("unused")
-    private fun chmax(a: LongArray, idx: Int, v: Long): Boolean {
-        if (v > a[idx]) {
-            a[idx] = v
-            return true
+        @Suppress("unused")
+        private fun chmin(a: IntArray, idx: Int, v: Int): Boolean {
+            if (v < a[idx]) {
+                a[idx] = v
+                return true
+            }
+            return false
         }
-        return false
-    }
 
-    
-""".trimIndent()
+        @Suppress("unused")
+        private fun chmax(a: IntArray, idx: Int, v: Int): Boolean {
+            if (v > a[idx]) {
+                a[idx] = v
+                return true
+            }
+            return false
+        }
+
+        @Suppress("unused")
+        private fun chmin(a: LongArray, idx: Int, v: Long): Boolean {
+            if (v < a[idx]) {
+                a[idx] = v
+                return true
+            }
+            return false
+        }
+
+        @Suppress("unused")
+        private fun chmax(a: LongArray, idx: Int, v: Long): Boolean {
+            if (v > a[idx]) {
+                a[idx] = v
+                return true
+            }
+            return false
+        }
+    """.trimIndent()
+}
