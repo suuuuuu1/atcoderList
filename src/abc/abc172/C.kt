@@ -4,14 +4,8 @@ fun main() {
     val (n, m, k) = readln().split(" ").map { it.toInt() }
     val a = readln().split(" ").map { it.toLong() }
     val b = readln().split(" ").map { it.toLong() }
-    val ruisekiA = LongArray(n + 1)
-    val ruisekiB = LongArray(m + 1)
-    for (i in 0 until a.size) {
-        ruisekiA[i + 1] = ruisekiA[i] + a[i]
-    }
-    for (i in 0 until b.size) {
-        ruisekiB[i + 1] = ruisekiB[i] + b[i]
-    }
+    val ruisekiA = a.runningFold(0L ,Long::plus)
+    val ruisekiB = b.runningFold(0L,Long::plus)
     var ans = 0
     var ok = m
     for (i in 0 until n + 1) {
@@ -19,5 +13,5 @@ fun main() {
         if (0 <= ok) ans = maxOf(ans, i + ok)
     }
     println(ans)
-
+    a.runningFold(0L,Long::plus)
 }
