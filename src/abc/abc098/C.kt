@@ -10,6 +10,5 @@ fun main() {
         if(s[i] == 'E') module--
         ans = minOf(ans,module)
     }
-    
     println(ans)
 }
