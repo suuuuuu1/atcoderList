@@ -13,7 +13,10 @@ fun main() {
             ans[t].add(i+1)
         }
     }
-
+    val a = StringBuilder()
+    for (an in ans) {
+        
+    }
     for (an in ans) {
 
         println(an.size)

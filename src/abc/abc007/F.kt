@@ -1,7 +1,18 @@
 package abc.abc007
 
-fun main() {
-
+fun main(args: Array<String>) {
+    var x = readln().toInt()
+    val coins = arrayOf(500,100,50,10,5,1)
+    var now = 0
+    var ans = 0
+    while(now != coins.size){
+        val amari = x % coins[now]
+        val shou = x / coins[now]
+        now++
+        x = amari
+        ans +=  shou
+    }
+    print(ans)
 }
 
 @Suppress("unused")
