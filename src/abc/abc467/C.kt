@@ -19,4 +19,5 @@ fun main() {
         println(cost1)
     }
     println(minOf(cost1,cost0))
+    var f = arrayOf(1,2,3)
 }
