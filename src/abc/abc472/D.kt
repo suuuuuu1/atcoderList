@@ -23,8 +23,6 @@ fun main() {
             }
         }
     }
-
-
     val queue = ArrayDeque<Pair<Int, Int>>()
     for (i in 0 until h) {
         for (j in 0 until w) {
