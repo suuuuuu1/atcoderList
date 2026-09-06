@@ -1,41 +1,23 @@
 package betu.edpc
 
 fun main() {
-    
-}
+    val (h, w) = readln().split(" ").map { it.toInt() }
+    val grid = Array(h) { readln().toCharArray() }
+    val mod = 1e9.toLong() + 7
+    val dp = Array(h) { LongArray(w) }
+    dp[0][0] = 1
 
-@Suppress("unused")
-private fun chmin(a: IntArray, idx: Int, v: Int): Boolean {
-    if (v < a[idx]) {
-        a[idx] = v
-        return true
+    for (i in 0 until h) {
+        //0は右 1が左
+        for (j in 0 until w) {
+            if (grid[i][j] == '#') continue
+            if (j != 0) {
+                dp[i][j] = (dp[i][j] + dp[i][j - 1]) % mod
+            }
+            if (i != 0) {
+                dp[i][j] = (dp[i][j] + dp[i - 1][j]) % mod
+            }
+        }
     }
-    return false
-}
-
-@Suppress("unused")
-private fun chmax(a: IntArray, idx: Int, v: Int): Boolean {
-    if (v > a[idx]) {
-        a[idx] = v
-        return true
-    }
-    return false
-}
-
-@Suppress("unused")
-private fun chmin(a: LongArray, idx: Int, v: Long): Boolean {
-    if (v < a[idx]) {
-        a[idx] = v
-        return true
-    }
-    return false
-}
-
-@Suppress("unused")
-private fun chmax(a: LongArray, idx: Int, v: Long): Boolean {
-    if (v > a[idx]) {
-        a[idx] = v
-        return true
-    }
-    return false
+    println(dp[h-1][w-1])
 }
