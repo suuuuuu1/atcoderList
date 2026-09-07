@@ -17,6 +17,7 @@ fun main() {
             if (i != 0) {
                 dp[i][j] = (dp[i][j] + dp[i - 1][j]) % mod
             }
+
         }
     }
     println(dp[h-1][w-1])
