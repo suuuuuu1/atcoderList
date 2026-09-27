@@ -1,7 +1,5 @@
 package abc.abc476
 
-import java.util.PriorityQueue
-
 fun main() {
     val n = readln().toInt()
     val a = readln().split(" ").map { it.toInt() }.toMutableList()
