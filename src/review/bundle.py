@@ -14,5 +14,6 @@ bundle = {
     "editable": False,
     "tsv": tsv.read_text(encoding="utf-8") if tsv.exists() else "",
     "files": files,
+    "textbook": {p.name: p.read_text(encoding="utf-8") for p in sorted(Path("src/review/textbook").glob("*.md"))},
 }
 sys.stdout.buffer.write(json.dumps(bundle, ensure_ascii=False).encode("utf-8"))
