@@ -552,7 +552,11 @@ $('random').onclick = () => {
   const list = filtered();
   if (list.length) open(list[Math.floor(Math.random() * list.length)].path);
 };
-load().catch(e => $('list').innerHTML = `<div class="empty">読み込みに失敗しました: ${esc(String(e))}</div>`);
+// contests.js などの後続スクリプトを読み終えてから始める
+document.addEventListener('DOMContentLoaded', () => load().catch(e => {
+  const msg = `<div class="empty">読み込みに失敗しました: ${esc(String(e))}</div>`;
+  ['list', 'doc', 'cbody'].forEach(id => $(id).innerHTML = msg);
+}));
 </script>
 <script src="contests.js"></script>
 </body>
