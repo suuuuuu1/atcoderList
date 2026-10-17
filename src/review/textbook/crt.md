@@ -5,6 +5,8 @@ acl: crt
 genres: 整数論, 数学
 order: 230
 summary: 「3 で割って 2 余り、5 で割って 3 余る数」を求める
+level: 水
+keywords: 中国剰余定理, Chinese Remainder Theorem, 連立合同式, 余りの条件
 ---
 
 ## 何ができる？

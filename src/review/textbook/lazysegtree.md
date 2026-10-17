@@ -5,6 +5,8 @@ acl: lazysegtree
 genres: セグメント木・BIT
 order: 140
 summary: 区間への一括更新と区間の和・最小などを O(log N) で行う
+level: 水
+keywords: 遅延セグ木, lazy segment tree, 区間更新, 区間加算, 区間代入, RAQ, RUQ
 ---
 
 ## 何ができる？

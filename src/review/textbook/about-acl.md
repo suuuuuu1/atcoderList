@@ -5,6 +5,7 @@ acl: -
 genres:
 order: 10
 summary: この教科書の読み方と、Kotlin で ACL のアルゴリズムを使う方法
+keywords: ACL, AtCoder Library, ライブラリ, 使い方, はじめに
 ---
 
 ## ACL とは？

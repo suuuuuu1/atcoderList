@@ -5,6 +5,8 @@ acl: fenwicktree
 genres: セグメント木・BIT, 累積和, 座標圧縮
 order: 120
 summary: 1 点に足す操作と区間の和を、どちらも O(log N) で行う
+level: 緑
+keywords: BIT, Binary Indexed Tree, 区間和, 一点更新, 転倒数, inversion
 ---
 
 ## 何ができる？

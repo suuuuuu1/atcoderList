@@ -5,6 +5,8 @@ acl: dsu
 genres: Union-Find, グラフ
 order: 110
 summary: 「同じグループか？」の判定とグループの合体を高速に行う
+level: 茶
+keywords: 連結, グループ, 素集合, union find, 友達, 同じ集合, 連結成分
 ---
 
 ## 何ができる？

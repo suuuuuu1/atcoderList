@@ -5,6 +5,8 @@ acl: mincostflow
 genres: グラフ, フロー
 order: 320
 summary: 決まった量を流すときの合計コストの最小値を求める
+level: 青
+keywords: 最小費用流, min cost flow, 割り当て, 費用最小, 重み付きマッチング
 ---
 
 ## 何ができる？

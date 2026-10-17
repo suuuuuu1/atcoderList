@@ -5,6 +5,8 @@ acl: convolution
 genres: 畳み込み, 数学, 組み合わせ, DP
 order: 250
 summary: 多項式の掛け算 (畳み込み) を O(N log N) で計算する
+level: 青
+keywords: NTT, FFT, 多項式, 掛け算, 畳み込み, 数論変換
 ---
 
 ## 何ができる？

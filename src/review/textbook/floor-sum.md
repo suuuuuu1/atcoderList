@@ -5,6 +5,8 @@ acl: floor_sum
 genres: 数学, 整数論
 order: 240
 summary: Σ floor((a·i + b) / m) を O(log m) で計算する
+level: 青
+keywords: 床関数, floor, 格子点, 切り捨ての和
 ---
 
 ## 何ができる？

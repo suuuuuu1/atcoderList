@@ -85,12 +85,25 @@ main[hidden] { display: none; }
 .tb-link { display: inline-block; margin: 0 6px 10px 0; font-size: 12px; color: var(--accent); text-decoration: none; }
 
 /* 教科書 */
-main.book { grid-template-columns: 240px 1fr; }
-#toc { padding: 8px 0; }
-#toc .cat { font-size: 11px; color: var(--muted); font-weight: 600; padding: 10px 14px 4px; letter-spacing: .05em; }
+main.book { grid-template-columns: 270px 1fr; }
+#toc { padding: 0 0 20px; }
+.toc-tools { position: sticky; top: 0; background: var(--panel); padding: 10px 12px; display: flex; gap: 6px; border-bottom: 1px solid var(--line); z-index: 1; }
+.toc-tools input { flex: 1; min-width: 0; width: auto; }
+#toc .cat { font-size: 11px; color: var(--muted); font-weight: 600; padding: 10px 14px 4px; letter-spacing: .05em; cursor: pointer; list-style: none; }
+#toc summary.cat::before { content: '▸ '; }
+#toc details[open] > summary.cat::before { content: '▾ '; }
+#toc .cat .n { font-weight: normal; }
 #toc a { display: block; padding: 5px 14px; font-size: 13px; color: var(--text); text-decoration: none; }
+#toc a .t { display: flex; align-items: center; gap: 6px; }
+#toc a .sub { display: block; font-size: 11px; color: var(--muted); margin-left: 24px; }
 #toc a:hover { background: var(--bg); }
 #toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.acl { font-size: 9px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); font-weight: normal; }
+.lv { display: inline-block; min-width: 18px; text-align: center; font-size: 10px; line-height: 16px; border-radius: 3px; color: #fff; font-weight: 600; }
+.lv-0 { background: #808080; } .lv-1 { background: #804000; } .lv-2 { background: #008000; }
+.lv-3 { background: #00a8a8; } .lv-4 { background: #0000ff; } .lv-5 { background: #b0a000; }
+nav.sec { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+nav.sec button { font-size: 12px; padding: 3px 9px; border-radius: 12px; }
 #doc { overflow-y: auto; padding: 20px 28px 60px; }
 #doc .inner { max-width: 860px; }
 #doc h1 { font-size: 24px; margin: 0 0 4px; }
@@ -113,9 +126,10 @@ main.book { grid-template-columns: 240px 1fr; }
 
 @media (max-width: 900px) {
   main.book { grid-template-columns: 1fr; }
-  #toc { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
-  #toc .cat { width: 100%; padding: 6px 0 0; }
-  #toc a { border: 1px solid var(--line); border-radius: 12px; padding: 3px 10px; font-size: 12px; }
+  #toc { display: block; padding: 0 0 6px; border-bottom: 1px solid var(--line); max-height: 60vh; overflow-y: auto; }
+  .toc-tools { padding: 10px 16px; }
+  #toc .cat { padding: 8px 16px 4px; }
+  #toc a { padding: 6px 16px; }
   #doc { padding: 16px; }
   .tabs { order: -1; }
 }
@@ -156,7 +170,15 @@ main.book { grid-template-columns: 240px 1fr; }
   <section id="detail"><div class="empty">左のジャンルを選んで、問題をクリックしてください</div></section>
 </main>
 <main id="bookMain" class="book" hidden>
-  <aside id="toc"></aside>
+  <aside id="toc">
+    <div class="toc-tools">
+      <input type="search" id="bq" placeholder="🔍 検索 (最短経路, mod, 区間…)">
+      <select id="blv" title="難易度の目安で絞り込み">
+        <option value="">全レベル</option><option>灰</option><option>茶</option><option>緑</option><option>水</option><option>青</option><option>黄</option>
+      </select>
+    </div>
+    <div id="tocList"></div>
+  </aside>
   <article id="doc"></article>
 </main>
 
@@ -200,7 +222,10 @@ async function load() {
 
 // ---------- 教科書 ----------
 let pages = [];
-const CATEGORIES = ['はじめに', 'データ構造', '数学', 'グラフ', '文字列'];
+const CATEGORIES = ['はじめに', '全探索・探索', '基本テクニック', 'DP', 'グラフ', '木', '数学', '文字列', 'データ構造'];
+const LEVELS = ['灰', '茶', '緑', '水', '青', '黄'];
+const levelBadge = lv => lv ? `<span class="lv lv-${LEVELS.indexOf(lv)}" title="目安: ${esc(lv)}色">${esc(lv)}</span>` : '';
+const isMobile = () => matchMedia('(max-width: 900px)').matches;
 
 // 先頭の --- key: value --- を読む
 function parsePage(file, md) {
@@ -209,7 +234,44 @@ function parsePage(file, md) {
   (m ? m[1] : '').split('\n').forEach(l => { const i = l.indexOf(':'); if (i > 0) meta[l.slice(0, i).trim()] = l.slice(i + 1).trim(); });
   return { slug: file.replace(/\.md$/, ''), title: meta.title || file, category: meta.category || 'その他',
     acl: meta.acl && meta.acl !== '-' ? meta.acl : '', summary: meta.summary || '', order: Number(meta.order) || 999,
-    genres: splitGenres(meta.genres || ''), body: m ? m[2] : md };
+    genres: splitGenres(meta.genres || ''), level: meta.level || '', keywords: splitGenres(meta.keywords || ''),
+    body: m ? m[2] : md };
+}
+
+// 全ての語を含むページを、タイトル > キーワード > 説明・ジャンル > 本文 の順に重みを付けて並べる
+function searchPages(q) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  return pages.map(p => {
+    const fields = [[p.title, 10], [p.keywords.join(' ') + ' ' + p.acl, 6], [p.summary + ' ' + p.genres.join(' ') + ' ' + p.category, 4], [p.body, 1]]
+      .map(([t, w]) => [t.toLowerCase(), w]);
+    let score = 0;
+    for (const w of words) {
+      const s = fields.reduce((acc, [t, wt]) => acc + (t.includes(w) ? wt : 0), 0);
+      if (!s) return null;
+      score += s;
+    }
+    return { p, score };
+  }).filter(Boolean).sort((a, b) => b.score - a.score || a.p.order - b.p.order).map(r => r.p);
+}
+
+function renderToc(page) {
+  const q = $('bq').value.trim(), lv = $('blv').value;
+  const ok = p => !lv || p.level === lv;
+  const link = (p, sub) => `<a href="#textbook/${encodeURIComponent(p.slug)}" class="${p === page ? 'active' : ''}" title="${esc(p.summary)}">
+      <span class="t">${levelBadge(p.level)}${esc(p.title)}${p.acl ? '<span class="acl">ACL</span>' : ''}</span>${sub ? `<span class="sub">${esc(p.summary)}</span>` : ''}</a>`;
+  if (q) {
+    const hits = searchPages(q).filter(ok);
+    $('tocList').innerHTML = `<div class="cat">「${esc(q)}」の検索結果 ${hits.length}件</div>` +
+      (hits.length ? hits.map(p => link(p, true)).join('') : '<div class="hint" style="padding:6px 14px">見つかりません。別の言い方で試してみてください</div>');
+    return;
+  }
+  const cats = [...CATEGORIES, ...new Set(pages.map(p => p.category))].filter((c, i, a) => a.indexOf(c) === i);
+  $('tocList').innerHTML = cats.map(c => {
+    const ps = pages.filter(p => p.category === c && ok(p));
+    if (!ps.length) return '';
+    const openCat = !isMobile() || lv || (page && page.category === c);
+    return `<details ${openCat ? 'open' : ''}><summary class="cat">${esc(c)} <span class="n">${ps.length}</span></summary>${ps.map(p => link(p)).join('')}</details>`;
+  }).join('');
 }
 
 const pagesForGenre = g => pages.filter(p => p.genres.includes(g));
@@ -226,12 +288,8 @@ function route() {
 
 function showPage(slug) {
   const page = pages.find(p => p.slug === slug) || pages[0];
-  const cats = [...CATEGORIES, ...new Set(pages.map(p => p.category))].filter((c, i, a) => a.indexOf(c) === i);
-  $('toc').innerHTML = cats.map(c => {
-    const ps = pages.filter(p => p.category === c);
-    return ps.length ? `<div class="cat">${esc(c)}</div>` + ps.map(p =>
-      `<a href="#textbook/${encodeURIComponent(p.slug)}" class="${p === page ? 'active' : ''}" title="${esc(p.summary)}">${esc(p.title)}</a>`).join('') : '';
-  }).join('');
+  currentPage = page;
+  renderToc(page);
   if (!page) { $('doc').innerHTML = '<div class="empty">src/review/textbook/ にページがありません</div>'; return; }
 
   const mine = items.filter(it => allGenres(it).some(g => page.genres.includes(g)));
@@ -240,17 +298,31 @@ function showPage(slug) {
     <h1>${esc(page.title)}</h1>
     ${page.summary ? `<p class="lead">${esc(page.summary)}</p>` : ''}
     <div class="meta">
+      ${page.level ? `<span>目安 ${levelBadge(page.level)}</span>` : ''}
       ${page.acl ? `<span>ACL: <code>${esc(page.acl)}</code></span>` : ''}
       ${page.genres.map(g => `<a class="chip" href="#" data-genre="${esc(g)}">${esc(g)}</a>`).join('')}
     </div>
     ${page.genres.length ? `<div class="mine">自分の解答 (${mine.length}件):
       ${mine.length ? mine.slice(0, 12).map(it => `<a href="#" data-open="${esc(it.path)}">${esc(it.contest)} ${esc(it.problem)}</a>`).join('')
         + (mine.length > 12 ? '…' : '') : '<span class="hint">まだありません。例題を解いてみよう！</span>'}</div>` : ''}
+    <nav class="sec" id="sec"></nav>
     ${html}</div>`;
   $('doc').scrollTop = 0;
-  window.scrollTo(0, 0);
+  // スマホでは目次の下に本文があるので、ページを選んだら本文までスクロール
+  if (isMobile() && location.hash.split('/')[1]) $('doc').scrollIntoView();
+  else window.scrollTo(0, 0);
+
+  // ページ内の見出しへジャンプ
+  const hs = [...$('doc').querySelectorAll('.inner > h2')];
+  $('sec').innerHTML = hs.map((h, i) => `<button data-sec="${i}">${esc(h.textContent)}</button>`).join('');
+  $('sec').querySelectorAll('button').forEach(b => b.onclick = () => hs[b.dataset.sec].scrollIntoView({ behavior: 'smooth' }));
 
   $('doc').querySelectorAll('a[href^="http"]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  // 本文中の [BFS](bfs.md) のようなリンクを教科書内のページリンクに変える
+  $('doc').querySelectorAll('a[href]').forEach(a => {
+    const m = a.getAttribute('href').match(/^(?:\.\/)?([\w-]+)\.md(?:#.*)?$/);
+    if (m) a.setAttribute('href', '#textbook/' + m[1]);
+  });
   $('doc').querySelectorAll('pre code').forEach(code => {
     if (window.hljs) hljs.highlightElement(code);
     const btn = document.createElement('button');
@@ -271,6 +343,16 @@ function showPage(slug) {
   });
 }
 window.addEventListener('hashchange', () => { route(); render(); });
+let currentPage = null;
+$('bq').addEventListener('input', () => renderToc(currentPage));
+$('blv').addEventListener('input', () => { store('blv', $('blv').value); renderToc(currentPage); });
+$('blv').value = store('blv') || '';
+// "/" キーで教科書検索へ
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.body.classList.contains('book-mode') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault(); $('bq').focus();
+  }
+});
 
 const GENRE_LINE = /^\s*\/\/\s*genre\s*:(.*)$/i;
 const splitGenres = s => s.split(/[,、]/).map(g => g.trim()).filter(Boolean);

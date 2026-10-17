@@ -5,6 +5,8 @@ acl: suffix_array/lcp_array
 genres: 文字列, ソート
 order: 410
 summary: 全ての接尾辞を辞書順に並べ、部分文字列の問題を解く
+level: 青
+keywords: 接尾辞配列, SA, LCP, 部分文字列, 辞書順, 異なる部分文字列
 ---
 
 ## 何ができる？
