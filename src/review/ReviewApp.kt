@@ -7,10 +7,6 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.net.URI
 import java.net.URLDecoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.util.zip.GZIPInputStream
 
 /*
  * 解いたコードをジャンル別に振り返るローカルアプリ。
@@ -33,8 +29,6 @@ private val root: File = listOf(File("."), File(".."))
     .first { File(it, "src/review").isDirectory }
 private val srcDir = File(root, "src")
 private val tsvFile = File(root, "genres.tsv")
-private val httpClient: HttpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()
-
 fun main() {
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", PORT), 0)
     server.createContext("/") { ex -> handle(ex) }
@@ -52,18 +46,6 @@ private fun handle(ex: HttpExchange) {
             path.matches(Regex("""/[\w-]+\.js""")) && File(srcDir, "review$path").isFile ->
                 send(ex, 200, "text/javascript", File(srcDir, "review$path").readText())
             path == "/api/bundle" -> send(ex, 200, "application/json", bundleJson())
-            // AtCoder Problems API の中継 (ブラウザから直接取れない環境のため)
-            path == "/api/ap" -> {
-                val target = parseForm(ex.requestURI.rawQuery.orEmpty())["path"].orEmpty()
-                if (!target.matches(Regex("""resources/[\w-]+\.json|atcoder-api/v3/user/submissions\?user=[\w-]+&from_second=\d+""")))
-                    return send(ex, 400, "text/plain", "bad path")
-                val res = httpClient.send(
-                    HttpRequest.newBuilder(URI("https://kenkoooo.com/atcoder/$target")).header("Accept-Encoding", "gzip").build(),
-                    HttpResponse.BodyHandlers.ofInputStream(),
-                )
-                val stream = if (res.headers().firstValue("Content-Encoding").orElse("") == "gzip") GZIPInputStream(res.body()) else res.body()
-                send(ex, res.statusCode(), "application/json", stream.use { it.readBytes().toString(Charsets.UTF_8) })
-            }
             path == "/api/save" && ex.requestMethod == "POST" -> {
                 val form = parseForm(ex.requestBody.readBytes().toString(Charsets.UTF_8))
                 val p = form["path"].orEmpty()

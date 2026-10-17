@@ -85,8 +85,8 @@ body.book-mode .solve-only, body.contest-mode .solve-only { display: none; }
 /* コンテスト */
 main.contest { display: block; overflow-y: auto; padding: 14px 16px 40px; }
 .ctools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
-.ctools input { width: 160px; }
-.ctools .hint a { color: var(--muted); }
+.ctools .hint { margin: 0; }
+.crate .den { color: var(--muted); font-size: 11px; }
 .cstats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 6px; }
 .crate { font-size: 13px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .clegend { display: flex; gap: 8px; font-size: 11px; margin-bottom: 8px; }
@@ -96,16 +96,20 @@ main.contest { display: block; overflow-y: auto; padding: 14px 16px 40px; }
 .ctable th, .ctable td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
 .ctable thead th { background: var(--panel); position: sticky; top: 0; text-align: center; }
 .ctable tbody th { background: var(--panel); white-space: nowrap; font-weight: 600; }
-.ctable td { min-width: 120px; max-width: 200px; }
+.ctable td { min-width: 96px; max-width: 180px; }
+.ctable td[data-open] { cursor: pointer; }
+.ctable td[data-open]:hover { filter: brightness(.95); }
 .ctable a { color: var(--text); text-decoration: none; }
 .ctable a:hover { text-decoration: underline; }
-.ctable .mycode { margin-left: 2px; }
-.st2 { background: #b9f2c8; } .st1 { background: #e2f7e7; } .st0 { background: #fdeeb4; }
+.ctable .pl { font-weight: 700; }
+.ctable .flag { color: var(--warn); margin-left: 3px; }
+.ctable .cg { display: flex; flex-wrap: wrap; gap: 2px 6px; margin-top: 2px; font-size: 11px; }
+.ctable .cg .none { color: var(--muted); }
+.ctable td.none { background: var(--bg); }
+.ok { background: #c8f0d2; } .rv { background: #ffe1c2; } .todo { background: var(--panel); color: var(--muted); }
 @media (prefers-color-scheme: dark) {
-  .st2 { background: #1f5a33; } .st1 { background: #1d3a27; } .st0 { background: #4d4116; }
+  .ok { background: #1f4f30; } .rv { background: #553417; }
 }
-.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--c); background: var(--c); margin-right: 3px; vertical-align: -1px; }
-.joined { font-size: 10px; color: var(--ok); border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-left: 4px; font-weight: normal; }
 main[hidden] { display: none; }
 .tb-link { display: inline-block; margin: 0 6px 10px 0; font-size: 12px; color: var(--accent); text-decoration: none; }
 
@@ -209,14 +213,12 @@ nav.sec button { font-size: 12px; padding: 3px 9px; border-radius: 12px; }
 </main>
 <main id="contestMain" class="contest" hidden>
   <div class="ctools">
-    <input type="text" id="cuser" placeholder="AtCoder ID" autocomplete="username" spellcheck="false">
-    <button class="primary" id="cshow">表示 / 更新</button>
     <select id="ckind">
-      <option value="abc">ABC</option><option value="arc">ARC</option><option value="agc">AGC</option>
-      <option value="ahc">AHC</option><option value="other">その他</option><option value="all">すべて</option>
+      <option value="abc">ABC</option><option value="arc">ARC</option><option value="atc">ATC</option>
+      <option value="betu">その他 (betu)</option><option value="">すべて</option>
     </select>
-    <label class="check"><input type="checkbox" id="cjoined" checked> 参加した回のみ</label>
-    <span class="hint">データ: <a href="https://kenkoooo.com/atcoder/" target="_blank" rel="noopener">AtCoder Problems</a> (反映まで少し遅れることがあります)</span>
+    <label class="check"><input type="checkbox" id="csolved" checked> 1問以上解いた回のみ</label>
+    <span class="hint">マスを押すとコードが開きます。マウスを乗せるとメモが出ます</span>
   </div>
   <div id="cbody"></div>
 </main>
@@ -234,7 +236,7 @@ const vocab = [
   '文字列', 'シミュレーション', '実装', '二次元グリッド', '再帰',
   'スタック・キュー', '優先度付きキュー', 'セグメント木・BIT', '座標圧縮', '半分全列挙',
 ];
-let items = [], editable = false, genre = ALL, selected = null;
+let items = [], bundleFiles = {}, editable = false, genre = ALL, selected = null;
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const allGenres = it => [...new Set([...it.fileGenres, ...it.genres])];
@@ -248,6 +250,7 @@ async function load() {
   if (!res || !res.ok) res = await fetch('bundle.json', { cache: 'no-cache' });
   const data = await res.json();
   editable = data.editable;
+  bundleFiles = data.files;
   items = buildItems(data).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
 
   const probs = [...new Set(items.map(it => it.problem))].sort((a, b) => a.length - b.length || a.localeCompare(b));
@@ -327,7 +330,7 @@ function route() {
   $('tabBook').classList.toggle('on', book);
   $('tabContest').classList.toggle('on', contest);
   if (book) showPage(decodeURIComponent(location.hash.split('/')[1] || '') || pages[0]?.slug);
-  if (contest && !$('cbody').innerHTML) showContests(false);
+  if (contest) showContests();
 }
 
 function showPage(slug) {
