@@ -71,6 +71,9 @@ aside { border-right: 1px solid var(--line); padding: 8px 0; background: var(--p
 textarea { width: 100%; min-height: 70px; resize: vertical; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .saved { color: var(--ok); font-size: 12px; }
+.memo-view { white-space: pre-wrap; margin: 10px 0 0; }
+.hint { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+.back { display: none; margin-bottom: 10px; }
 pre { margin: 0; border: 1px solid var(--line); border-radius: 8px; overflow: auto; font-size: 13px; }
 pre code.hljs, pre code { padding: 14px; display: block; font-family: Consolas, "JetBrains Mono", monospace; }
 
@@ -81,8 +84,12 @@ pre code.hljs, pre code { padding: 14px; display: block; font-family: Consolas, 
   .g .bar, .sep { display: none; }
   .g .name { width: auto; }
   #list { max-height: 45vh; border-right: 0; border-bottom: 1px solid var(--line); }
-  #detail { padding: 16px; }
-  input[type=search] { width: 140px; }
+  #detail { padding: 16px; min-height: 100vh; }
+  .back { display: inline-block; }
+  header { position: static; padding: 10px 16px; }
+  header h1 { width: 100%; }
+  input[type=search] { flex: 1 1 100%; width: auto; }
+  pre { font-size: 12px; }
 }
 </style>
 </head>
@@ -93,6 +100,7 @@ pre code.hljs, pre code { padding: 14px; display: block; font-family: Consolas, 
   <div class="spacer"></div>
   <input type="search" id="q" placeholder="検索 (abc451, メモ…)">
   <select id="type"><option value="">全コンテスト</option><option>abc</option><option>arc</option><option>atc</option><option>betu</option></select>
+  <select id="prob"><option value="">全問題</option></select>
   <label class="check"><input type="checkbox" id="onlyReview"> 要復習のみ</label>
   <button id="random" title="表示中のリストからランダムに1問">🎲 ランダム復習</button>
 </header>
@@ -106,28 +114,76 @@ pre code.hljs, pre code { padding: 14px; display: block; font-family: Consolas, 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
 <script>
 const UNCLASSIFIED = '__none__', ALL = '__all__';
-let vocab = [], items = [], genre = ALL, selected = null;
+const vocab = [
+  '全探索', 'bit全探索', '順列全探索', '貪欲', '二分探索', '累積和', 'いもす法', '尺取り法', 'ソート',
+  'DP', 'bitDP', '桁DP', '区間DP',
+  'BFS', 'DFS', 'ダイクストラ', 'ワーシャルフロイド', 'Union-Find', '最小全域木', 'トポロジカルソート', '木', 'グラフ',
+  '数学', '整数論', '組み合わせ', '幾何', '行列累乗',
+  '文字列', 'シミュレーション', '実装', '二次元グリッド', '再帰',
+  'スタック・キュー', '優先度付きキュー', 'セグメント木・BIT', '座標圧縮', '半分全列挙',
+];
+let items = [], editable = false, genre = ALL, selected = null;
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const allGenres = it => [...new Set([...it.fileGenres, ...it.genres])];
+const store = (k, v) => { try { v === undefined ? (v = localStorage.getItem(k)) : localStorage.setItem(k, v); } catch (e) {} return v; };
 
-try { genre = localStorage.getItem('genre') || ALL; } catch (e) {}
+genre = store('genre') || ALL;
 
+// PC で ReviewApp.kt から開いたときは /api/bundle (編集可)、GitHub Pages では bundle.json (閲覧のみ)
 async function load() {
-  const data = await (await fetch('/api/list')).json();
-  vocab = data.genres;
-  items = data.items.sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+  let res = await fetch('/api/bundle').catch(() => null);
+  if (!res || !res.ok) res = await fetch('bundle.json', { cache: 'no-cache' });
+  const data = await res.json();
+  editable = data.editable;
+  items = buildItems(data).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+
+  const probs = [...new Set(items.map(it => it.problem))].sort((a, b) => a.length - b.length || a.localeCompare(b));
+  $('prob').innerHTML = '<option value="">全問題</option>' + probs.map(p => `<option value="${esc(p)}">${esc(p)}問題</option>`).join('');
+  ['type', 'prob'].forEach(id => $(id).value = store('f_' + id) || '');
   render();
+}
+
+const GENRE_LINE = /^\s*\/\/\s*genre\s*:(.*)$/i;
+const splitGenres = s => s.split(/[,、]/).map(g => g.trim()).filter(Boolean);
+
+function buildItems({ tsv, files }) {
+  const entries = {};
+  tsv.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#')).forEach(l => {
+    const [path, genres = '', review = '0', memo = ''] = l.split('\t');
+    entries[path] = { genres: splitGenres(genres), review: review === '1',
+      memo: memo.replace(/\\(.)/g, (_, c) => ({ n: '\n', t: '\t' }[c] ?? c)) };
+  });
+  return Object.entries(files).flatMap(([path, code]) => {
+    const fileGenres = code.split(/\r?\n/).map(l => l.match(GENRE_LINE)).filter(Boolean).flatMap(m => splitGenres(m[1]));
+    const entry = entries[path];
+    if (!hasCode(code) && !fileGenres.length && !entry) return [];
+    const [type, contest = '', name] = path.split('/');
+    return [{ path, type, contest, problem: (name || contest).replace(/\.kt$/, '').toUpperCase(), code, fileGenres,
+      genres: entry?.genres ?? [], review: entry?.review ?? false, memo: entry?.memo ?? '',
+      lines: code.split('\n').filter(l => l.trim()).length }];
+  });
+}
+
+// main の中身が空 (= Setup.kt で作っただけのテンプレート) でないか
+function hasCode(code) {
+  const m = /fun\s+main\s*\([^)]*\)\s*\{/.exec(code);
+  if (!m) return false;
+  let depth = 1, i = m.index + m[0].length;
+  const start = i;
+  for (; i < code.length && depth > 0; i++) depth += code[i] === '{' ? 1 : code[i] === '}' ? -1 : 0;
+  return code.slice(start, i - 1).split('\n').some(l => l.trim() && !l.trim().startsWith('//'));
 }
 // abc007 → abc0007 のように番号を揃えて並べる
 const sortKey = it => it.type + it.contest.replace(/\d+/, d => d.padStart(4, '0')) + it.problem;
 
 function filtered() {
-  const q = $('q').value.trim().toLowerCase(), type = $('type').value, onlyReview = $('onlyReview').checked;
+  const q = $('q').value.trim().toLowerCase(), type = $('type').value, prob = $('prob').value, onlyReview = $('onlyReview').checked;
   return items.filter(it => {
     const gs = allGenres(it);
     if (genre === UNCLASSIFIED ? gs.length : genre !== ALL && !gs.includes(genre)) return false;
     if (type && it.type !== type) return false;
+    if (prob && it.problem !== prob) return false;
     if (onlyReview && !it.review) return false;
     if (q && !(it.path + ' ' + it.memo + ' ' + gs.join(' ')).toLowerCase().includes(q)) return false;
     return true;
@@ -148,8 +204,7 @@ function render() {
   $('genres').innerHTML = row(ALL, 'すべて', items.length) + row(UNCLASSIFIED, '未分類', none) + '<div class="sep"></div>' +
     names.map(g => row(g, g, counts[g], true)).join('');
   document.querySelectorAll('.g').forEach(el => el.onclick = () => {
-    genre = el.dataset.g;
-    try { localStorage.setItem('genre', genre); } catch (e) {}
+    genre = store('genre', el.dataset.g);
     render();
   });
 
@@ -164,20 +219,28 @@ function render() {
   document.querySelectorAll('.item').forEach(el => el.onclick = () => open(el.dataset.p));
 }
 
-async function open(path) {
+function open(path) {
   selected = path;
   const it = items.find(i => i.path === path);
   document.querySelectorAll('.item').forEach(el => el.classList.toggle('sel', el.dataset.p === path));
-  const code = await (await fetch('/api/code?path=' + encodeURIComponent(path))).text();
   let picked = new Set(it.genres);
   const extra = [...new Set(items.flatMap(allGenres))].filter(g => !vocab.includes(g));
   const options = [...vocab, ...extra];
+  const gs = allGenres(it);
 
+  const viewer = `
+    <div class="editor">
+      <div class="chips">${gs.length ? gs.map(g => `<span class="chip">${esc(g)}</span>`).join('') : '<span class="chip none">未分類</span>'}
+        ${it.review ? '<span class="chip none">● 要復習</span>' : ''}</div>
+      ${it.memo ? `<p class="memo-view">${esc(it.memo)}</p>` : ''}
+      <p class="hint">閲覧専用です。ジャンルやメモの編集は PC のアプリ、またはコードの // genre: 行で行い、push すると反映されます。</p>
+    </div>`;
   $('detail').innerHTML = `
+    <button class="back" id="back">↑ 一覧に戻る</button>
     <h2>${esc(it.contest)} ${esc(it.problem)}
       <a href="https://atcoder.jp/contests/${encodeURIComponent(it.contest)}/tasks" target="_blank" rel="noopener">AtCoderで問題を見る ↗</a></h2>
-    <div class="path">src/${esc(it.path)} ・ ${it.lines}行 ・ 更新 ${new Date(it.mtime).toLocaleDateString()}</div>
-    <div class="editor">
+    <div class="path">src/${esc(it.path)} ・ ${it.lines}行</div>
+    ${editable ? `<div class="editor">
       <h3>ジャンル（クリックで切替${it.fileGenres.length ? '・水色はソース内の // genre: 由来' : ''}）</h3>
       <div class="pick" id="pick"></div>
       <div class="row"><input type="text" id="newGenre" placeholder="新しいジャンルを追加"><button id="addGenre">追加</button></div>
@@ -188,10 +251,13 @@ async function open(path) {
         <span class="spacer"></span><span class="saved" id="saved"></span>
         <button class="primary" id="save">保存 (Ctrl+S)</button>
       </div>
-    </div>
+    </div>` : viewer}
     <pre><code class="language-kotlin" id="code"></code></pre>`;
-  $('code').textContent = code;
+  $('code').textContent = it.code;
   if (window.hljs) hljs.highlightElement($('code'));
+  $('back').onclick = () => $('list').scrollIntoView({ behavior: 'smooth' });
+  if (matchMedia('(max-width: 900px)').matches) $('detail').scrollIntoView({ behavior: 'smooth' });
+  if (!editable) return;
 
   const drawPick = () => {
     $('pick').innerHTML = [...new Set([...options, ...picked])].map(g =>
@@ -221,12 +287,13 @@ async function open(path) {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's' && $('save')) { e.preventDefault(); $('save').click(); }
 });
-['q', 'type', 'onlyReview'].forEach(id => $(id).addEventListener('input', render));
+['q', 'onlyReview'].forEach(id => $(id).addEventListener('input', render));
+['type', 'prob'].forEach(id => $(id).addEventListener('input', () => { store('f_' + id, $(id).value); render(); }));
 $('random').onclick = () => {
   const list = filtered();
   if (list.length) open(list[Math.floor(Math.random() * list.length)].path);
 };
-load();
+load().catch(e => $('list').innerHTML = `<div class="empty">読み込みに失敗しました: ${esc(String(e))}</div>`);
 </script>
 </body>
 </html>
