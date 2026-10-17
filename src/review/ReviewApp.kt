@@ -67,14 +67,17 @@ private fun handle(ex: HttpExchange) {
     }
 }
 
-/** {"editable":true,"tsv":"...","files":{"abc/abc001/A.kt":"...", ...}} */
+/** {"editable":true,"tsv":"...","files":{"abc/abc001/A.kt":"...", ...},"textbook":{"dsu.md":"...", ...}} */
 private fun bundleJson(): String {
     val files = CONTEST_DIRS.flatMap { type ->
         File(srcDir, type).walkTopDown().filter { it.isFile && it.extension == "kt" }
             .map { js(it.relativeTo(srcDir).invariantSeparatorsPath) + ":" + js(it.readText()) }.toList()
     }
+    val textbook = File(srcDir, "review/textbook").listFiles { f -> f.extension == "md" }.orEmpty()
+        .sortedBy { it.name }.map { js(it.name) + ":" + js(it.readText()) }
     val tsv = if (tsvFile.exists()) tsvFile.readText() else ""
-    return """{"editable":true,"tsv":${js(tsv)},"files":{${files.joinToString(",")}}}"""
+    return """{"editable":true,"tsv":${js(tsv)},"files":{${files.joinToString(",")}},""" +
+        """"textbook":{${textbook.joinToString(",")}}}"""
 }
 
 private fun resolve(rel: String): File? {
