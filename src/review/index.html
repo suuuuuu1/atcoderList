@@ -68,6 +68,20 @@ aside { border-right: 1px solid var(--line); padding: 8px 0; background: var(--p
 .pick span { font-size: 12px; padding: 2px 9px; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; user-select: none; }
 .pick span.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .pick span.lock { background: var(--accent-soft); color: var(--accent); border-color: transparent; cursor: default; }
+.picked { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 26px; align-items: center; }
+.pc { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; padding: 2px 4px 2px 10px; border-radius: 14px; background: var(--accent); color: #fff; }
+.pc.lock { background: var(--accent-soft); color: var(--accent); padding-right: 10px; }
+.pc button { border: 0; background: transparent; color: inherit; padding: 0 6px; font-size: 14px; line-height: 1; cursor: pointer; }
+.gsearch { position: relative; margin-bottom: 8px; }
+.gsearch input { width: 100%; }
+.sugg { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin-top: 2px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.12); overflow: hidden; }
+.sugg div { padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.sugg div.act, .sugg div:hover { background: var(--accent-soft); }
+.sugg .from { color: var(--muted); font-size: 11px; margin-left: 6px; }
+.quick { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 8px; }
+.quick button { font-size: 12px; padding: 2px 8px; border-radius: 12px; }
+.allg summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 6px; }
 textarea { width: 100%; min-height: 70px; resize: vertical; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
 .saved { color: var(--ok); font-size: 12px; }
@@ -191,6 +205,7 @@ nav.sec button { font-size: 12px; padding: 3px 9px; border-radius: 12px; }
   <input class="solve-only" type="search" id="q" placeholder="検索 (abc451, メモ…)">
   <select class="solve-only" id="type"><option value="">全コンテスト</option><option>abc</option><option>arc</option><option>atc</option><option>betu</option></select>
   <select class="solve-only" id="prob"><option value="">全問題</option></select>
+  <select class="solve-only" id="order" title="並び順"><option value="desc">新しい順</option><option value="asc">古い順</option></select>
   <label class="solve-only check"><input type="checkbox" id="onlyReview"> 要復習のみ</label>
   <button class="solve-only" id="random" title="表示中のリストからランダムに1問">🎲 ランダム復習</button>
 </header>
@@ -256,6 +271,7 @@ async function load() {
   const probs = [...new Set(items.map(it => it.problem))].sort((a, b) => a.length - b.length || a.localeCompare(b));
   $('prob').innerHTML = '<option value="">全問題</option>' + probs.map(p => `<option value="${esc(p)}">${esc(p)}問題</option>`).join('');
   ['type', 'prob'].forEach(id => $(id).value = store('f_' + id) || '');
+  $('order').value = store('f_order') || 'desc';
   pages = Object.entries(data.textbook || {}).map(([file, md]) => parsePage(file, md))
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
   render();
@@ -444,7 +460,15 @@ function filtered() {
     if (onlyReview && !it.review) return false;
     if (q && !(it.path + ' ' + it.memo + ' ' + gs.join(' ')).toLowerCase().includes(q)) return false;
     return true;
-  });
+  }).sort(compareItems);
+}
+
+// 新しい順: コンテストは番号の大きい順、同じコンテスト内は A → B → C のまま
+function compareItems(a, b) {
+  if ($('order').value !== 'desc') return sortKey(a).localeCompare(sortKey(b));
+  const num = it => Number((it.contest.match(/\d+/) || ['0'])[0]);
+  return a.type.localeCompare(b.type) || num(b) - num(a) || a.contest.localeCompare(b.contest)
+    || a.problem.length - b.problem.length || a.problem.localeCompare(b.problem);
 }
 
 function render() {
@@ -500,14 +524,20 @@ function open(path) {
     ${[...new Set(gs.flatMap(pagesForGenre))].map(p =>
       `<a class="tb-link" href="#textbook/${encodeURIComponent(p.slug)}">📘 ${esc(p.title)}</a>`).join('')}
     ${editable ? `<div class="editor">
-      <h3>ジャンル（クリックで切替${it.fileGenres.length ? '・水色はソース内の // genre: 由来' : ''}）</h3>
-      <div class="pick" id="pick"></div>
-      <div class="row"><input type="text" id="newGenre" placeholder="新しいジャンルを追加"><button id="addGenre">追加</button></div>
+      <h3>ジャンル${it.fileGenres.length ? '（水色はソース内の // genre: 由来。外すときはコードを編集）' : ''}</h3>
+      <div class="picked" id="picked"></div>
+      <div class="gsearch">
+        <input type="text" id="gq" placeholder="🔍 ジャンルを検索して追加（例: 二分、最短、mod）" autocomplete="off">
+        <div class="sugg" id="sugg" hidden></div>
+      </div>
+      <div class="quick" id="quick"></div>
+      <details class="allg"><summary>すべてのジャンルから選ぶ</summary><div class="pick" id="pick"></div></details>
       <h3 style="margin-top:12px">メモ（解法のポイント・ハマったところ）</h3>
       <textarea id="memo">${esc(it.memo)}</textarea>
       <div class="row">
         <label class="check"><input type="checkbox" id="review" ${it.review ? 'checked' : ''}> 要復習</label>
         <span class="spacer"></span><span class="saved" id="saved"></span>
+        <button id="saveNext" title="保存して、次のジャンル未分類の問題を開く">保存して次の未分類へ →</button>
         <button class="primary" id="save">保存 (Ctrl+S)</button>
       </div>
     </div>` : viewer}
@@ -518,28 +548,96 @@ function open(path) {
   if (matchMedia('(max-width: 900px)').matches) $('detail').scrollIntoView({ behavior: 'smooth' });
   if (!editable) return;
 
-  const drawPick = () => {
-    $('pick').innerHTML = [...new Set([...options, ...picked])].map(g =>
-      it.fileGenres.includes(g) ? `<span class="lock">${esc(g)}</span>`
-        : `<span class="${picked.has(g) ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}</span>`).join('');
-    $('pick').querySelectorAll('span[data-g]').forEach(el => el.onclick = () => {
-      picked.has(el.dataset.g) ? picked.delete(el.dataset.g) : picked.add(el.dataset.g);
-      drawPick();
-    });
+  // 候補: 基本の語彙 + 自分で追加したジャンル + 教科書に出てくるジャンル
+  const allOptions = [...new Set([...options, ...pages.flatMap(p => p.genres)])];
+  const usage = {};
+  items.forEach(i => allGenres(i).forEach(g => usage[g] = (usage[g] || 0) + 1));
+  const has = g => picked.has(g) || it.fileGenres.includes(g);
+  const clean = s => s.trim().replace(/[,\t、]/g, '');
+  let active = 0;
+
+  const add = g => { g = clean(g); if (g && !has(g)) picked.add(g); $('gq').value = ''; drawAll(); $('gq').focus(); };
+  const remove = g => { picked.delete(g); drawAll(); };
+
+  // 入力に対する候補: 名前に含む (前方一致を優先) → 教科書の検索で見つかったページのジャンル → 新規追加
+  function suggestions(q) {
+    const lq = q.toLowerCase(), out = [];
+    allOptions.filter(g => !has(g) && g.toLowerCase().includes(lq))
+      .sort((a, b) => !a.toLowerCase().startsWith(lq) - !b.toLowerCase().startsWith(lq) || (usage[b] || 0) - (usage[a] || 0))
+      .forEach(g => out.push({ g, label: esc(g) }));
+    for (const p of searchPages(q).slice(0, 5)) {
+      const g = p.genres[0]; // そのページの代表ジャンルだけ
+      if (g && !has(g) && !out.some(o => o.g === g)) out.push({ g, label: `${esc(g)} <span class="from">📘 ${esc(p.title)}</span>` });
+    }
+    const c = clean(q);
+    if (c && !allOptions.includes(c) && !has(c)) out.push({ g: c, label: `＋「${esc(c)}」を新しいジャンルとして追加` });
+    return out.slice(0, 8);
+  }
+
+  function drawSugg() {
+    const q = $('gq').value.trim();
+    const list = q ? suggestions(q) : [];
+    $('sugg').hidden = !list.length;
+    active = Math.min(active, Math.max(0, list.length - 1));
+    $('sugg').innerHTML = list.map((s, i) => `<div class="${i === active ? 'act' : ''}" data-g="${esc(s.g)}">${s.label}</div>`).join('');
+    $('sugg').querySelectorAll('[data-g]').forEach(el => el.onmousedown = e => { e.preventDefault(); add(el.dataset.g); });
+  }
+
+  function drawAll() {
+    $('picked').innerHTML = [
+      ...it.fileGenres.map(g => `<span class="pc lock" title="ソースの // genre: 行から">${esc(g)}</span>`),
+      ...[...picked].filter(g => !it.fileGenres.includes(g)).map(g => `<span class="pc">${esc(g)}<button data-rm="${esc(g)}" title="外す">×</button></span>`),
+    ].join('') || '<span class="hint" style="margin:0">まだジャンルがありません。下の検索か「よく使う」から追加してください</span>';
+    $('picked').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => remove(b.dataset.rm));
+
+    const top = Object.keys(usage).filter(g => !has(g)).sort((a, b) => usage[b] - usage[a]).slice(0, 10);
+    $('quick').innerHTML = top.length ? '<span class="hint" style="margin:0">よく使う:</span>' +
+      top.map(g => `<button data-g="${esc(g)}">＋ ${esc(g)}</button>`).join('') : '';
+    $('quick').querySelectorAll('[data-g]').forEach(b => b.onclick = () => add(b.dataset.g));
+
+    $('pick').innerHTML = allOptions.map(g => it.fileGenres.includes(g) ? `<span class="lock">${esc(g)}</span>`
+      : `<span class="${picked.has(g) ? 'on' : ''}" data-g="${esc(g)}">${esc(g)}</span>`).join('');
+    $('pick').querySelectorAll('span[data-g]').forEach(el => el.onclick = () => picked.has(el.dataset.g) ? remove(el.dataset.g) : add(el.dataset.g));
+    drawSugg();
+  }
+  drawAll();
+
+  $('gq').oninput = () => { active = 0; drawSugg(); };
+  $('gq').onblur = () => $('sugg').hidden = true;
+  $('gq').onfocus = drawSugg;
+  $('gq').onkeydown = e => {
+    const n = $('sugg').querySelectorAll('[data-g]').length;
+    if (e.key === 'ArrowDown' && n) { e.preventDefault(); active = (active + 1) % n; drawSugg(); }
+    else if (e.key === 'ArrowUp' && n) { e.preventDefault(); active = (active - 1 + n) % n; drawSugg(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const el = $('sugg').querySelectorAll('[data-g]')[active];
+      if (el) add(el.dataset.g); else if ($('gq').value.trim()) add($('gq').value);
+    } else if (e.key === 'Escape') { $('gq').value = ''; drawSugg(); }
+    else if (e.key === 'Backspace' && !$('gq').value) {
+      const last = [...picked].filter(g => !it.fileGenres.includes(g)).pop();
+      if (last) remove(last);
+    }
   };
-  drawPick();
-  $('addGenre').onclick = () => {
-    const g = $('newGenre').value.trim().replace(/[,\t]/g, '');
-    if (g) { picked.add(g); $('newGenre').value = ''; drawPick(); }
-  };
-  $('newGenre').onkeydown = e => { if (e.key === 'Enter') $('addGenre').click(); };
-  $('save').onclick = async () => {
+
+  const save = async () => {
     const body = new URLSearchParams({ path, genres: [...picked].join(','), review: $('review').checked ? '1' : '0', memo: $('memo').value });
     const res = await fetch('/api/save', { method: 'POST', body });
-    if (!res.ok) { $('saved').textContent = '保存失敗: ' + await res.text(); return; }
+    if (!res.ok) { $('saved').textContent = '保存失敗: ' + await res.text(); return false; }
     Object.assign(it, { genres: [...picked], review: $('review').checked, memo: $('memo').value });
     $('saved').textContent = '保存しました';
     render();
+    return true;
+  };
+  $('save').onclick = save;
+  // 表示中の並び順で、今の問題より後ろにある未分類の問題 (なければ先頭から) を開く
+  $('saveNext').onclick = async () => {
+    if (!await save()) return;
+    const order = items.slice().sort(compareItems);
+    const i = order.indexOf(it);
+    const next = [...order.slice(i + 1), ...order.slice(0, i)].find(x => !allGenres(x).length);
+    if (next) { open(next.path); $('gq').focus(); }
+    else $('saved').textContent = '保存しました。未分類の問題はもうありません 🎉';
   };
 }
 
@@ -547,7 +645,7 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's' && $('save')) { e.preventDefault(); $('save').click(); }
 });
 ['q', 'onlyReview'].forEach(id => $(id).addEventListener('input', render));
-['type', 'prob'].forEach(id => $(id).addEventListener('input', () => { store('f_' + id, $(id).value); render(); }));
+['type', 'prob', 'order'].forEach(id => $(id).addEventListener('input', () => { store('f_' + id, $(id).value); render(); }));
 $('random').onclick = () => {
   const list = filtered();
   if (list.length) open(list[Math.floor(Math.random() * list.length)].path);
@@ -561,3 +659,4 @@ document.addEventListener('DOMContentLoaded', () => load().catch(e => {
 <script src="contests.js"></script>
 </body>
 </html>
+                                  
