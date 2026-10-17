@@ -122,9 +122,9 @@ abc/abc478/A.kt	実装	0	m個をn人に順番に配る個数
 abc/abc478/B.kt	全探索	0	3重ループで重み和最大の3つ組を探索
 abc/abc478/C.kt	ソート	0	ソート比較で不一致区間長がk以下か判定
 abc/abc478/D.kt		1	未実装（入力読込のみ）
-abc/abc480/A.kt	実装,文字列	0	
-abc/abc480/B.kt	文字列,実装	0	
-abc/abc480/C.kt	実装,貪欲	0	
+abc/abc480/A.kt	実装,文字列	0	もっといいやり方ありそう
+abc/abc480/B.kt	文字列,実装,全探索	0	全探索
+abc/abc480/C.kt	実装,貪欲	0	範囲の調整
 arc/arc022/B.kt	尺取り法	0	重複なし最長区間を集合で尺取り
 atc/atc001/A.kt	DFS,二次元グリッド	0	グリッド上をDFSしてsからg到達判定
 atc/atc001/C.kt	Union-Find	0	Union-Findで連結クエリに回答
