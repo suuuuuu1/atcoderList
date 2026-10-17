@@ -27,7 +27,7 @@ jobs:
       - name: Build site
         run: |
           mkdir _site
-          cp src/review/index.html _site/
+          cp src/review/index.html src/review/*.js _site/
           python3 src/review/bundle.py > _site/bundle.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
