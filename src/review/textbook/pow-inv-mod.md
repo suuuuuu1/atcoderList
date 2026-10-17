@@ -5,6 +5,8 @@ acl: pow_mod/inv_mod
 genres: 整数論, 数学
 order: 220
 summary: x^n mod m を高速に計算し、mod が素数でなくても逆元を求める
+level: 緑
+keywords: 繰り返し二乗法, べき乗, 累乗, 逆元, 拡張ユークリッド, modpow, 割り算
 ---
 
 ## 何ができる？

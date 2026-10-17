@@ -5,6 +5,8 @@ acl: segtree
 genres: セグメント木・BIT, 二分探索
 order: 130
 summary: 1 点更新と区間の和・最小・最大などを O(log N) で求める
+level: 緑
+keywords: セグ木, segment tree, 区間最小, 区間最大, RMQ, 区間和, 一点更新, 区間取得
 ---
 
 ## 何ができる？

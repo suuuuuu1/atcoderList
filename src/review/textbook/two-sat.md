@@ -5,6 +5,8 @@ acl: two_sat
 genres: グラフ, 2-SAT
 order: 340
 summary: 「A または B」形式の条件をすべて満たす真偽の割り当てを探す
+level: 青
+keywords: 2-SAT, 充足可能性, 真偽, 条件, 論理式
 ---
 
 ## 何ができる？

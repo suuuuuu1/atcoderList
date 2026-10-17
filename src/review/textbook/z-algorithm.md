@@ -5,6 +5,8 @@ acl: z_algorithm
 genres: 文字列
 order: 420
 summary: 各位置から始まる部分と先頭との一致長を O(N) で求める
+level: 水
+keywords: Z algorithm, 最長共通接頭辞, パターン検索, 文字列検索, prefix
 ---
 
 ## 何ができる？

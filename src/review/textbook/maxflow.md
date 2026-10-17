@@ -5,6 +5,8 @@ acl: maxflow
 genres: グラフ, フロー
 order: 310
 summary: 容量つきの辺で s から t へ最大いくら流せるかを求める
+level: 青
+keywords: フロー, 最大流, Dinic, 二部マッチング, 最小カット, max flow, 燃やす埋める
 ---
 
 ## 何ができる？

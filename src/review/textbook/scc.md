@@ -5,6 +5,8 @@ acl: scc
 genres: グラフ, DFS, 強連結成分分解, トポロジカルソート
 order: 330
 summary: 有向グラフを「互いに行き来できる頂点のグループ」に分ける
+level: 水
+keywords: 強連結成分, SCC, 有向グラフ, サイクル, 縮約, DAG
 ---
 
 ## 何ができる？
