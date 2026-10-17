@@ -78,6 +78,7 @@ private fun buildTemplate(contestType: String, contestName: String): String {
     return """
         package $packageName
 
+        // genre:
         fun main() {
 
         }
