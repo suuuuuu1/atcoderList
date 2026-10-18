@@ -3,11 +3,15 @@ abc/abc007/C.kt	BFS,二次元グリッド	0	迷路の最短距離をグリッド
 abc/abc007/F.kt	貪欲	0	硬貨を大きい順に使う枚数最小
 abc/abc032/c.kt	尺取り法	0	積がK以下の最長連続部分列を尺取り
 abc/abc038/C.kt	尺取り法	0	単調増加な区間の個数を尺取りで数える
+abc/abc081/B.kt	実装	0	
+abc/abc083/B.kt	実装	0	
+abc/abc085/B.kt	実装	0	ラムダ関数
 abc/abc098/C.kt	累積和,全探索	0	リーダー位置全探索で向き変更数を差分更新
 abc/abc117/C.kt	ソート,貪欲	0	座標ソートし間隔の大きい所を除外
 abc/abc130/C.kt	幾何,数学	0	中心を通る直線で半分、中心判定
 abc/abc138/D.kt	木,DFS,累積和	0	木上でDFSし親の加算値を子へ伝播
 abc/abc149/D.kt	DP	0	mod K系列ごとに前手と違う手のDP
+abc/abc164/C.kt	実装	0	ラムダ関数
 abc/abc168/D.kt	BFS,グラフ	0	部屋1からBFSし親を道しるべに出力
 abc/abc172/C.kt	累積和,尺取り法	0	両山の累積和で読める冊数最大を尺取り
 abc/abc173/D.kt	貪欲,ソート	0	降順ソートし a[i/2] を足す貪欲

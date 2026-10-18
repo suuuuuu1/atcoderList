@@ -2,16 +2,11 @@ package betu.edpc
 
 fun main() {
     val n = readln().toInt()
-    val dp = Array(100_010){IntArray(3)}
-    for(i in 0 until n){
+    var yesterday = IntArray(3)
+    repeat(n) {
         val a = readln().split(" ").map{it.toInt()}
-        for(j in 0 until 3){
-            for(k in 0 until 3){
-                if(j == k)continue
-                dp[i+1][k] = maxOf(dp[i][j] + a[k],dp[i+1][k])
-            }
-        }
+        yesterday = IntArray(3){j -> (0 until 3).filter { it != j }.maxOf{yesterday[it]} + a[j] }
     }
-    println(dp[n].max())
+    println(yesterday.max())
 }
 
