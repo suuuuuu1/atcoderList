@@ -3,18 +3,15 @@ package betu.edpc
 import kotlin.math.abs
 
 fun main() {
-    val (n, k) = readln().split(" ").map { it.toInt() }
+    val (n, step) = readln().split(" ").map { it.toInt() }
     val h = readln().split(" ").map { it.toInt() }
-    val dp = IntArray(n){Int.MAX_VALUE}
-    dp[0] = 0
-
-    for (i in 1 until n) {
-         for (j in 1 ..  k) {
-             if(i - j >= 0){
-                 val cost = dp[i - j] + abs(h[i] - h[i-j])
-                 dp[i] = minOf(dp[i],cost)
-             }
-         }
+    val dp = IntArray(n)
+    for(i in 1 until n){
+        dp[i] = dp[i-1] + abs(h[i-1] - h[i])
+        for(j in 2 .. step){
+            if(i - j < 0)break
+            dp[i] = minOf(dp[i], dp[i-j]+abs(h[i-j] - h[i]))
+        }
     }
     println(dp[n-1])
 }
