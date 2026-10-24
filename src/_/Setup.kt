@@ -77,8 +77,8 @@ private fun buildTemplate(contestType: String, contestName: String): String {
     val packageName = "$contestType.$contestName"
     return """
         package $packageName
-
-        // genre:
+         
+        //https://suuuuuu1.github.io/atcoderList/#
         fun main() {
 
         }
