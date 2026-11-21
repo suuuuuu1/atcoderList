@@ -68,18 +68,37 @@ private fun handle(ex: HttpExchange) {
     }
 }
 
-/** {"editable":true,"tsv":"...","files":{"abc/abc001/A.kt":"...", ...},"textbook":{"dsu.md":"...", ...}} */
+/** {"editable":true,"tsv":"...","files":{"abc/abc001/A.kt":"...", ...},"dates":{"abc/abc001/A.kt":["2026-03-21", ...]},"textbook":{"dsu.md":"...", ...}} */
 private fun bundleJson(): String {
-    val files = CONTEST_DIRS.flatMap { type ->
-        File(srcDir, type).walkTopDown().filter { it.isFile && it.extension == "kt" }
-            .map { js(it.relativeTo(srcDir).invariantSeparatorsPath) + ":" + js(it.readText()) }.toList()
-    }
+    val kts = CONTEST_DIRS.flatMap { type ->
+        File(srcDir, type).walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+    }.associateBy { it.relativeTo(srcDir).invariantSeparatorsPath }
+    val files = kts.map { (rel, f) -> js(rel) + ":" + js(f.readText()) }
+    val history = gitDates()
+    val dates = kts.keys.mapNotNull { rel -> history[rel]?.let { ds -> js(rel) + ":[" + ds.joinToString(",") { js(it) } + "]" } }
     val textbook = File(srcDir, "review/textbook").listFiles { f -> f.extension == "md" }.orEmpty()
         .sortedBy { it.name }.map { js(it.name) + ":" + js(it.readText()) }
     val tsv = if (tsvFile.exists()) tsvFile.readText() else ""
     return """{"editable":true,"tsv":${js(tsv)},"files":{${files.joinToString(",")}},""" +
-        """"textbook":{${textbook.joinToString(",")}}}"""
+        """"dates":{${dates.joinToString(",")}},"textbook":{${textbook.joinToString(",")}}}"""
 }
+
+// git の履歴から、ファイルごとにコミットされた日付 (古い順・重複なし) を集める。分析タブで使う。git が使えなければ空
+private fun gitDates(): Map<String, List<String>> = runCatching {
+    val p = ProcessBuilder("git", "-c", "core.quotepath=false", "log", "--format=@%ad", "--date=short", "--name-only", "--", "src")
+        .directory(root).start()
+    val out = p.inputStream.bufferedReader(Charsets.UTF_8).readText()
+    p.waitFor()
+    val map = mutableMapOf<String, java.util.TreeSet<String>>()
+    var day = ""
+    out.lineSequence().forEach { line ->
+        when {
+            line.startsWith("@") -> day = line.substring(1)
+            line.startsWith("src/") && line.endsWith(".kt") -> map.getOrPut(line.removePrefix("src/")) { java.util.TreeSet() }.add(day)
+        }
+    }
+    map.mapValues { it.value.toList() }
+}.getOrDefault(emptyMap())
 
 private fun resolve(rel: String): File? {
     if (rel.isEmpty() || rel.contains("..") || CONTEST_DIRS.none { rel.startsWith("$it/") }) return null
