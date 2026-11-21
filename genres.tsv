@@ -1,8 +1,12 @@
 # path	genres	review	memo
+abc/abc007/A.kt	実装,シミュレーション	0	料金プランと時間帯ごとの料金計算をクラスで実装
 abc/abc007/C.kt	BFS,二次元グリッド	0	迷路の最短距離をグリッドBFS
 abc/abc007/F.kt	貪欲	0	硬貨を大きい順に使う枚数最小
 abc/abc032/c.kt	尺取り法	0	積がK以下の最長連続部分列を尺取り
 abc/abc038/C.kt	尺取り法	0	単調増加な区間の個数を尺取りで数える
+abc/abc061/A.kt	実装	0	CがA以上B以下か判定
+abc/abc061/C.kt	累積和	0	値ごとの個数を数えて小さい方からK番目を探す
+abc/abc071/B.kt	文字列	0	sに含まれない最小の英小文字を探す
 abc/abc081/B.kt	実装	0	
 abc/abc083/B.kt	実装	0	
 abc/abc085/B.kt	実装	0	ラムダ関数
@@ -16,6 +20,9 @@ abc/abc168/D.kt	BFS,グラフ	0	部屋1からBFSし親を道しるべに出力
 abc/abc172/C.kt	累積和,尺取り法	0	両山の累積和で読める冊数最大を尺取り
 abc/abc173/D.kt	貪欲,ソート	0	降順ソートし a[i/2] を足す貪欲
 abc/abc177/D.kt	Union-Find	0	友人グループ最大サイズをUFで求める
+abc/abc197/C.kt	bit全探索	0	区切り位置をbit全探索してORのXORを最小化
+abc/abc197/F.kt	貪欲	0	硬貨を大きい順に使う枚数最小
+abc/abc204/D.kt	DP	0	部分和DPで2つに分けた時の大きい方を最小化
 abc/abc289/C.kt	bit全探索	0	集合の選び方をbit全探索し全被覆判定
 abc/abc291/D.kt	DP	0	隣接カードの表裏が異なる通り数DP
 abc/abc306/D.kt	DP	0	健康/毒の2状態で美味しさ最大DP
@@ -129,7 +136,20 @@ abc/abc478/D.kt		1	未実装（入力読込のみ）
 abc/abc480/A.kt	実装,文字列	0	もっといいやり方ありそう
 abc/abc480/B.kt	文字列,実装,全探索	0	全探索
 abc/abc480/C.kt	実装,貪欲	0	範囲の調整
+abc/abc481/A.kt	実装,文字列	0	A+Bの桁数を文字列の長さで数える
+abc/abc481/B.kt	実装,全探索	0	隣り合う値の間をKが通る回数を数える
+abc/abc481/C.kt	実装,文字列	0	名前ごとに初出順の番号をHashMapで管理
+abc/abc481/D.kt	グラフ,BFS	0	最小番号の辺をコスト0にして01-BFS
+abc/abc482/A.kt	文字列	0	'o'の個数の偶奇を判定
+abc/abc482/B.kt	二次元グリッド,全探索	0	5x5の行・列・対角線で'.'が最少のラインを探す
+abc/abc482/C.kt	二分探索,ソート	0	座標をソートしlower/upperBoundで範囲内の個数を数える
+abc/abc482/D.kt	貪欲,数学	0	左右どちらの端を先に回るか2通りの最大の最小
+abc/abc483/B.kt	シミュレーション	0	先頭k枚を反転・符号反転する操作を愚直にシミュ
+abc/abc483/C.kt	実装,ソート	0	1位票と各自の2位票を足して最多得票者を求める
+abc/abc483/D.kt		1	未実装（rangeの試し出力のみ）
 arc/arc022/B.kt	尺取り法	0	重複なし最長区間を集合で尺取り
+arc/arc127/A.kt	数学	0	先頭の1の個数ごとに桁数別の区間を数える
+arc/arc127/C.kt	数学,貪欲	0	2進数を1ずつ減らしつつ上の桁から貪欲に構築
 atc/atc001/A.kt	DFS,二次元グリッド	0	グリッド上をDFSしてsからg到達判定
 atc/atc001/C.kt	Union-Find	0	Union-Findで連結クエリに回答
 betu/adc/G.kt	整数論,二分探索	0	エラトステネスで素数列挙しp*q^3≦Nを二分探索で数える
@@ -140,6 +160,6 @@ betu/edpc/C.kt	DP	0	Vacation 前日と違う行動の最大幸福DP
 betu/edpc/D.kt	DP	0	Knapsack1 重さ添字の0-1ナップサックDP
 betu/edpc/E.kt	DP	0	Knapsack2 価値添字で最小重さDP
 betu/edpc/H.kt	DP,二次元グリッド	0	Grid1 障害物ありグリッド経路数DP
-betu/gomi.kt	優先度付きキュー,スタック・キュー	0	Queueと優先度付きキューの挙動確認
 betu/kasupaiza/a.kt	DP,二次元グリッド	0	下へ斜め含め3方向移動の最大和DP
 betu/kasupaiza/b.kt	シミュレーション,二次元グリッド	0	同色消去と落下を繰り返すシミュ
+betu/list.kt	優先度付きキュー,スタック・キュー	0	Queueと優先度付きキューの挙動確認
